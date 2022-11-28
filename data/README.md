@@ -1,0 +1,1 @@
+This dataset is obtained from the Los Angeles Open Data website (https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8).
