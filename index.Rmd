@@ -1,5 +1,5 @@
 ---
-title: "PM566 Final Project"
+title: "Analysis of crime incidence and distribution in Los Angeles"
 author: "Yuwei Wu"
 output: 
     html_document:
@@ -7,22 +7,24 @@ output:
         toc_float: TRUE
 ---
 
-This is my PM566 final project website.
-
-<br>
-
-# Lab setup
 
 ```{r setup, message=FALSE, echo=FALSE, warning=FALSE}
 library(data.table)
 library(tidyverse)
+library(ggplot2)
 library(dplyr)
+library(dtplyr)
+library(lubridate)
+library(leaflet)
+library(R.utils)
+library(kableExtra)
+library(forcats)
+library(stringr)
 library(plotly)
-library(DT)
 library(knitr)
 ```
 
-```{r}
+```{r, echo = FALSE}
 # Initialize code chunk options
 opts_chunk$set(
   warning = FALSE,
@@ -35,4 +37,147 @@ opts_chunk$set(
   fig.asp = 0.618,
   out.width = "700px")
 ```
+
+# Introduction
+Almost every week I will receive Crime Alerts from the USC Department of Public Safety, so I'm interested to know the crime incidence and distribution in LA. This dataset reflects incidents of crime in the City of Los Angeles dating back to 2020, it's provided by the Los Angeles Police Department. 
+<br>
+
+
+- The primary question is whether the number of crimes has decreased in LA from 2020 to 2021.
+
+- The sub-question: 
+
+  Which area of Los Angeles has the highest number of crimes in 2021?
+  
+  What is the most common crime type in 2021 and which area occurred most?
+<br>
+
+# Data source
+This dataset is obtained from the Los Angeles Open Data website (https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8).
+
+```{r, include = FALSE}
+#Read in data
+crime <- data.table::fread("data/Crime_Data_from_2020_to_Present.csv")
+```
+
+```{r, include = FALSE}
+#Check the dimensions, headers, footers
+dim(crime)
+head(crime)
+tail(crime)
+#Take a look at the variables
+str(crime)
+#Take a closer look at the key variables
+table(crime$`DATE OCC`)
+table(crime$`Crm Cd Desc`)
+table(crime$`AREA NAME`)
+distinct(crime, `Crm Cd Desc`)
+distinct(crime, `AREA NAME`)
+#Check missing values
+summary(is.na(crime))
+#Transform character to date and extract the year from the occurrence date then add a new column named "year"
+dates <- as.POSIXct(crime$`DATE OCC`, format = "%m/%d/%Y %H:%M:%S AM")
+crime$year <- format(dates, format="%Y")
+#Extract data in 2020 and 2021
+data_all <- crime[year == "2020" | year == "2021"]
+data2020 <- crime[year == "2020"]
+data2021 <- crime[year == "2021"]
+```
+
+# Results
+## Crime in Los Angeles by year.
+```{r, echo = FALSE}
+crime_2020 <- data2020[, .(
+  "year2020" =  .N
+), by = "AREA NAME"]
+
+crime_2021 <- data2021[, .(
+  "year2021" =  .N
+), by = "AREA NAME"]
+
+crime_data <- data_all[, .(
+  "Total" =  .N
+), by = "AREA NAME"]
+```
+
+```{r, echo = FALSE}
+p<-ggplot(data_all, aes(x =year)) + 
+  geom_bar(stat = 'count', fill = 'lightblue',width = 0.5) + 
+  labs(title = "Figure1. Total number of crimes in LA by year")
+ggplotly(p)
+```
+
+  Figure 1 shows that there are 198644 crimes in 2020 and 208294 crimes in 2021 in Los Angeles. The total number of crimes in 2021 is more than in 2020 but the difference is small.
+  
+## Crime in different areas in LA by year.
+```{r, echo = FALSE}
+p<-ggplot(data_all, mapping = aes(x = `AREA NAME`), fill = year) + 
+  geom_bar(aes(fill = year)) + 
+  scale_fill_manual(values = c("pink","orange"))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.1))+
+  labs(title = "Figure2. Number of crimes in different areas in LA by year", x = "AREA NAME")
+ggplotly(p)
+```
+
+  Figure 2 shows the number of crimes in different areas in LA is close in 2020 and 2021. For example, in 77th Street, there are 13232 crimes in 2020 and 13011 crimes in 2021. We can also find that 77th Street, Central, and Pacific are the three most dangerous areas.
+  
+## Crime in different areas in LA in 2021.
+```{r, echo = FALSE}
+df<-as.data.frame(crime_2021)
+df<-mutate(df, `AREA NAME` = fct_reorder(`AREA NAME`, `year2021`))
+p<-ggplot(df, aes(x=`AREA NAME`, y=`year2021`)) +
+    geom_bar(stat="identity", fill="#f68060", alpha=.6, width=.4) +
+    theme(axis.text.x = element_text(hjust = 0.5, vjust = 0.1))+
+    labs(title = "Figure3. Number of crimes in different areas in LA in 2021")+    
+    theme_gray(base_size = 10)+
+    coord_flip()
+ggplotly(p)
+```
+
+  Figure 3 shows that Central, 77th Street, and Pacific also are the three most dangerous areas in 2021. There are 13108 crimes in Central, 13011 crimes in 77th Street, and 12837 crimes in Pacific.
+
+## The top 15 crime types in LA in 2021.
+```{r, echo = FALSE}
+data2021_crime <- data2021[,.(
+  Total =  .N
+),by=c("Crm Cd Desc")]
+
+df1<-as.data.frame(data2021_crime)
+df1<-mutate(df1, `Crime type` = fct_reorder(`Crm Cd Desc`, Total))   
+df1<-head(df1, 15) 
+p<-ggplot(df1, aes(x=`Crime type`, y=Total)) +
+    geom_bar(stat="identity", fill="#f68060", alpha=.6, width=.4) +
+    theme(axis.text.x = element_text(hjust = 0.5, vjust = 0.1))+
+    labs(title = "Figure4. Crime types in LA in 2021")+
+    theme_gray(base_size = 10)+
+    coord_flip()
+ggplotly(p)
+```
+
+  Figure 4 shows that the most common crime type is vehicle stolen in 2021, there are 23632 vehicles stolen which is much more than other crime types. 
+
+
+## The number of vehicles stolen occurred in different areas in 2021.
+```{r, echo = FALSE}
+vs <- data2021[`Crm Cd` == "510"]
+vs1 <- vs[(LAT!=0)|(LON!=0)][, .(
+  "Total" =  .N
+), by = "AREA NAME"]
+
+df2<-as.data.frame(vs1)
+df2<-mutate(df2, `AREA NAME` = fct_reorder(`AREA NAME`, Total))  
+p<-ggplot(df2, aes(x=`AREA NAME`, y=Total)) +
+    geom_bar(stat="identity", fill="#f68060", alpha=.6, width=.4) +
+    theme(axis.text.x = element_text(hjust = 0.5, vjust = 0.1))+
+    labs(title = "Figure5. Vehicle stolen in each Los Angeles area in 2021")+
+    theme_gray(base_size = 10)+
+    coord_flip()
+ggplotly(p)
+```
+
+  Figure 5 shows that the most vehicle stolen events occurred on 77th Street in 2021. There are 1765 vehicles stolen in this area.
+  
+  
+# Conclusion
+From 2020 to 2021, although the number of crimes in 21 different areas in Los Angeles has not changed obviously, overall, the crime in Los Angeles has not decreased but increased. In 2021, 77th Street, Central, and Pacific of Los Angeles have the most crime occurred, and so do 2020. In 2021, the most common crime type was vehicle stolen, with the most occurring on 77th Street.
 
