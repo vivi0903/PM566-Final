@@ -1,0 +1,123 @@
+---
+title: "Tables and map"
+author: "Yuwei Wu"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, message=FALSE, echo=FALSE, warning=FALSE}
+library(data.table)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(dtplyr)
+library(lubridate)
+library(leaflet)
+library(R.utils)
+library(kableExtra)
+library(forcats)
+library(stringr)
+library(plotly)
+library(knitr)
+library(DT)
+```
+
+```{r, echo = FALSE}
+# Initialize code chunk options
+opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  eval=TRUE,
+  echo = TRUE,
+  cache = FALSE,
+  fig.width = 7, 
+  fig.align = 'center',
+  fig.asp = 0.618,
+  out.width = "700px")
+```
+
+```{r, include = FALSE}
+#Read in data
+crime <- data.table::fread("data/Crime_Data_from_2020_to_Present.csv")
+```
+
+```{r, include = FALSE}
+#Transform character to date and extract the year from the occurrence date then add a new column named "year"
+dates <- as.POSIXct(crime$`DATE OCC`, format = "%m/%d/%Y %H:%M:%S AM")
+crime$year <- format(dates, format="%Y")
+#Extract data in 2020 and 2021
+data_all <- crime[year == "2020" | year == "2021"]
+data2020 <- crime[year == "2020"]
+data2021 <- crime[year == "2021"]
+
+crime_year <- data_all[, .(
+  "Total number of crime" =  .N
+), by = `year` ]
+
+crime_2020 <- data2020[, .(
+  "year2020" =  .N
+), by = "AREA NAME"]
+
+crime_2021 <- data2021[, .(
+  "year2021" =  .N
+), by = "AREA NAME"]
+
+crime_data <- data_all[, .(
+  "Total" =  .N
+), by = "AREA NAME"]
+
+#combine two dataframe
+crime_combined1 = merge(crime_2020, crime_2021, by="AREA NAME", all.x=T)
+
+crime_combined2 = merge(crime_combined1, crime_data, by="AREA NAME", all.x=T)
+```
+
+<br>
+
+## Table1. Total number of crime in LA
+```{r, echo = FALSE}
+crime_year <- as.data.frame(crime_year)
+table1 <- crime_year %>%  select(year, "Total number of crime")
+datatable(table1)
+```
+
+  Table1 shows that there are 198644 crime in 2020 and 208294 crime in 2021 in Los Angeles. More total number of crime in 2021 than in 2020.
+  
+<br>
+
+## Table2. Number of crime in different areas in LA
+```{r, echo = FALSE, warning=FALSE}
+crime_combined2 <- as.data.frame(crime_combined2)
+table2 <- crime_combined2 %>% select("AREA NAME",year2020,year2021, Total)
+datatable(table2)
+```
+
+  Table2 shows that there are 21 areas occured crime and the number of crime in different areas in LA are close in 2020 and in 2021. Total number of crime in all areas had more than 14000 in 2020 and 2021, with 77th Street has the highest crime rate at 26243 and the Foothills has the lowest crime rate at 14056.
+
+<br>  
+  
+## Map：the detail locations of the vehicle stolen occurred in 2021
+```{r, echo = FALSE}
+vs <- data2021[`Crm Cd` == "510"]
+vs1 <- vs[(LAT!=0)|(LON!=0)][, .(
+  "Total" =  .N
+), by = "AREA NAME"]
+
+vs.pal <- colorFactor(c('darkgreen','goldenrod', 'brown'), domain=vs$`AREA NAME`)
+
+leaflet(vs[(LAT!=0)|(LON!=0)]) %>% 
+  # The looks of the Map
+  addProviderTiles('OpenStreetMap') %>% 
+  # Some circles
+  addCircles(
+    lat = ~LAT, lng=~LON, 
+  # HERE IS OUR PAL!
+    color = ~ vs.pal(`AREA NAME`),
+    opacity = 1, fillOpacity = 1, radius = 0.01
+    ) %>%
+  # And a pretty legend
+    addLegend('bottomleft', pal=vs.pal, values=vs$`AREA NAME`, title='Area name', opacity=1)
+```
+
