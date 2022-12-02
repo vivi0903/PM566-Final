@@ -183,6 +183,7 @@ ggplotly(p)
   Figure 5 shows that the most vehicle stolen events occurred on 77th Street in 2021. There are 1765 vehicles stolen in this area.
   
 <br>
+
   
 # Conclusion
 From 2020 to 2021, although the number of crimes in 21 different areas in Los Angeles has not changed obviously, overall, the crime in Los Angeles has not decreased but increased. In 2021, 77th Street, Central, and Pacific of Los Angeles have the most crime occurred, and so do 2020. In 2021, the most common crime type was vehicle stolen, with the most occurring on 77th Street.
