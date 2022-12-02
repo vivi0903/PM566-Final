@@ -7,6 +7,7 @@ navbar:
       href: index.html
     - text: "Tables and map"
       href: Tables.html
+      
 output:
   html_document:
     theme: cosmo
