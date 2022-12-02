@@ -1,10 +1,12 @@
 name: "my-website"
 output_dir: "."
 navbar:
-  title: "Final project"
+  title: "Analysis of crime incidence and distribution in Los Angeles"
   left:
     - text: "Home"
       href: index.html
+    - text: "Tables and map"
+      href: Tables.html
 output:
   html_document:
     theme: cosmo
