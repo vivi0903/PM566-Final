@@ -190,4 +190,5 @@ From 2020 to 2021, although the number of crimes in 21 different areas in Los An
 
 
 # Report
-The link to download the report: https://github.com/vivi0903/PM566-Final/blob/main/report/report.pdf
+The link to download the report: https://github.com/vivi0903/PM566-Final/raw/main/report/report.pdf
+

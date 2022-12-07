@@ -9,4 +9,4 @@ This is my PM566 final project website: https://vivi0903.github.io/PM566-Final/,
   What is the most common crime type in 2021 and which area occurred most?
  
 
-The link to download the report: https://github.com/vivi0903/PM566-Final/blob/main/report/report.pdf
+The link to download the report: https://github.com/vivi0903/PM566-Final/raw/main/report/report.pdf
